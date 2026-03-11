@@ -3,9 +3,9 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Image from 'next/image';
-import { Star, ShoppingCart, Heart, Share2, ShieldCheck, Truck, RotateCcw, Loader2 } from 'lucide-react';
+import { Share2, Info, Loader2, ChevronRight } from 'lucide-react';
 import api from '@/lib/api';
-import { formatPrice } from '@/lib/utils';
+import { formatPrice, getImageUrl } from '@/lib/utils';
 import ProductCard from '@/components/product/ProductCard';
 
 export default function ProductDetailsPage() {
@@ -14,7 +14,6 @@ export default function ProductDetailsPage() {
   const [relatedProducts, setRelatedProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeImage, setActiveImage] = useState(0);
-  const [selectedSize, setSelectedSize] = useState('');
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -47,158 +46,163 @@ export default function ProductDetailsPage() {
   if (!product) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh]">
-        <h1 className="text-2xl font-bold">Product not found</h1>
+        <h1 className="text-2xl font-serif">Masterpiece not found</h1>
       </div>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-        {/* Image Gallery */}
-        <div className="space-y-4">
-          <div className="relative aspect-[3/4] rounded-xl overflow-hidden bg-gray-100 border border-gray-100">
-            <Image
-              src={product.images[activeImage] || '/placeholder.jpg'}
-              alt={product.name}
-              fill
-              className="object-cover"
-            />
-          </div>
-          <div className="grid grid-cols-4 gap-4">
-            {product.images.map((img: string, idx: number) => (
-              <button
-                key={idx}
-                onClick={() => setActiveImage(idx)}
-                className={`relative aspect-square rounded-lg overflow-hidden border-2 transition-colors ${
-                  activeImage === idx ? 'border-pink-600' : 'border-transparent'
-                }`}
-              >
-                <Image src={img} alt={`${product.name} ${idx + 1}`} fill className="object-cover" />
-              </button>
-            ))}
-          </div>
-        </div>
+    <div className="bg-white min-h-screen">
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12 py-20">
+        {/* Breadcrumb */}
+        <nav className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 mb-12">
+          <a href="/" className="hover:text-pink-600 transition-colors">Home</a>
+          <ChevronRight size={10} />
+          <a href={`/${product.category}`} className="hover:text-pink-600 transition-colors">{product.category}</a>
+          <ChevronRight size={10} />
+          <span className="text-gray-900">{product.name}</span>
+        </nav>
 
-        {/* Product Info */}
-        <div className="flex flex-col">
-          <div className="mb-6">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">{product.name}</h1>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-1 bg-green-100 px-2 py-0.5 rounded text-green-700 font-bold text-sm">
-                <span>{product.rating || 4.5}</span>
-                <Star size={14} className="fill-green-700" />
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 lg:gap-24">
+          {/* Image Gallery - Left Side (7/12) */}
+          <div className="lg:col-span-7 space-y-8">
+            <div className="relative aspect-[3/4] overflow-hidden bg-gray-50">
+              <Image
+                  src={getImageUrl(product.images[activeImage])}
+                  alt={product.name}
+                  fill
+                  className="object-cover transition-all duration-700"
+                  priority
+                  unoptimized={true}
+                />
               </div>
-              <span className="text-gray-500 text-sm font-medium">{product.numReviews || 120} Ratings</span>
-            </div>
-          </div>
-
-          <div className="border-t border-b border-gray-100 py-6 mb-6">
-            <div className="flex items-center gap-4 mb-2">
-              <span className="text-4xl font-bold text-gray-900">
-                {formatPrice(product.discountPrice || product.price)}
-              </span>
-              {product.discountPrice && (
-                <>
-                  <span className="text-xl text-gray-500 line-through">
-                    {formatPrice(product.price)}
-                  </span>
-                  <span className="text-xl font-bold text-orange-500">
-                    ({Math.round(((product.price - product.discountPrice) / product.price) * 100)}% OFF)
-                  </span>
-                </>
-              )}
-            </div>
-            <p className="text-green-600 font-bold text-sm">Inclusive of all taxes</p>
-          </div>
-
-          {/* Saree/Kurti specific details */}
-          <div className="mb-8 grid grid-cols-2 gap-y-4 text-sm">
-            <div><span className="text-gray-500 font-medium">Fabric:</span> <span className="text-gray-900 font-semibold">{product.fabric}</span></div>
-            <div><span className="text-gray-500 font-medium">Color:</span> <span className="text-gray-900 font-semibold capitalize">{product.color}</span></div>
-            {product.category === 'saree' && (
-              <>
-                <div><span className="text-gray-500 font-medium">Work:</span> <span className="text-gray-900 font-semibold">{product.work}</span></div>
-                <div><span className="text-gray-500 font-medium">Occasion:</span> <span className="text-gray-900 font-semibold">{product.occasion}</span></div>
-                <div><span className="text-gray-500 font-medium">Blouse Included:</span> <span className="text-gray-900 font-semibold">{product.blouseIncluded}</span></div>
-              </>
-            )}
-            {product.category === 'kurti' && (
-              <>
-                <div><span className="text-gray-500 font-medium">Type:</span> <span className="text-gray-900 font-semibold">{product.kurtiType}</span></div>
-                <div><span className="text-gray-500 font-medium">Sleeve:</span> <span className="text-gray-900 font-semibold">{product.sleeveType}</span></div>
-                <div><span className="text-gray-500 font-medium">Neck:</span> <span className="text-gray-900 font-semibold">{product.neckType}</span></div>
-              </>
-            )}
-          </div>
-
-          {/* Size Selection for Kurti */}
-          {product.category === 'kurti' && (
-            <div className="mb-8">
-              <h3 className="text-sm font-bold text-gray-900 mb-4 uppercase tracking-wider">Select Size</h3>
-              <div className="flex flex-wrap gap-4">
-                {['S', 'M', 'L', 'XL', 'XXL'].map((size) => (
+              <div className="grid grid-cols-4 gap-6">
+                {product.images.map((img: string, idx: number) => (
                   <button
-                    key={size}
-                    disabled={!product.size.includes(size)}
-                    onClick={() => setSelectedSize(size)}
-                    className={`w-12 h-12 rounded-full border-2 flex items-center justify-center font-bold text-sm transition-all ${
-                      !product.size.includes(size) 
-                        ? 'border-gray-100 text-gray-300 cursor-not-allowed' 
-                        : selectedSize === size 
-                          ? 'border-pink-600 bg-pink-50 text-pink-600' 
-                          : 'border-gray-200 text-gray-700 hover:border-gray-900'
+                    key={idx}
+                    onClick={() => setActiveImage(idx)}
+                    className={`relative aspect-[3/4] overflow-hidden transition-all duration-300 ${
+                      activeImage === idx ? 'ring-2 ring-pink-600 ring-offset-4' : 'opacity-60 hover:opacity-100'
                     }`}
                   >
-                    {size}
+                    <Image src={getImageUrl(img)} alt={`${product.name} ${idx + 1}`} fill className="object-cover" unoptimized={true} />
                   </button>
                 ))}
               </div>
-            </div>
-          )}
-
-          {/* Actions */}
-          <div className="flex gap-4 mb-8">
           </div>
 
-          {/* Features */}
-          <div className="grid grid-cols-2 gap-4 border-t border-gray-100 pt-8">
-            <div className="flex items-center gap-3 text-sm font-medium text-gray-600">
-              <Truck size={20} className="text-pink-600" />
-              <span>Fast Delivery</span>
+          {/* Product Details - Right Side (5/12) */}
+          <div className="lg:col-span-5 flex flex-col pt-4">
+            <div className="space-y-6 mb-12 border-b border-gray-100 pb-12">
+              <span className="text-pink-600 text-xs font-bold tracking-[0.3em] uppercase">{product.category} Collection</span>
+              <h1 className="text-4xl md:text-5xl font-serif text-gray-900 leading-tight tracking-tight">{product.name}</h1>
+              <div className="flex items-center gap-6">
+                <span className="text-3xl font-light text-gray-900">
+                  {formatPrice(product.discountPrice || product.price)}
+                </span>
+                {product.discountPrice && (
+                  <span className="text-xl text-gray-400 line-through font-light">
+                    {formatPrice(product.price)}
+                  </span>
+                )}
+              </div>
             </div>
-            <div className="flex items-center gap-3 text-sm font-medium text-gray-600">
-              <RotateCcw size={20} className="text-pink-600" />
-              <span>10 Day Return</span>
+
+            <div className="space-y-12">
+              {/* Core Details Grid */}
+              <div className="grid grid-cols-2 gap-x-8 gap-y-10">
+                <div className="space-y-2">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Fabric</span>
+                  <p className="text-sm font-medium text-gray-900">{product.fabric}</p>
+                </div>
+                <div className="space-y-2">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Color Palette</span>
+                  <p className="text-sm font-medium text-gray-900 capitalize">{product.color}</p>
+                </div>
+                {product.category === 'saree' && (
+                  <>
+                    <div className="space-y-2">
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Artisan Work</span>
+                      <p className="text-sm font-medium text-gray-900">{product.work}</p>
+                    </div>
+                    <div className="space-y-2">
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Occasion</span>
+                      <p className="text-sm font-medium text-gray-900">{product.occasion}</p>
+                    </div>
+                  </>
+                )}
+                {product.category === 'kurti' && (
+                  <>
+                    <div className="space-y-2">
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Silhoutte</span>
+                      <p className="text-sm font-medium text-gray-900">{product.kurtiType}</p>
+                    </div>
+                    <div className="space-y-2">
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Neckline</span>
+                      <p className="text-sm font-medium text-gray-900">{product.neckType}</p>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* Sizes for Kurti */}
+              {product.category === 'kurti' && (
+                <div className="space-y-4 pt-6 border-t border-gray-100">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Available Sizes</span>
+                  <div className="flex flex-wrap gap-3">
+                    {['S', 'M', 'L', 'XL', 'XXL'].map((size) => (
+                      <span
+                        key={size}
+                        className={`w-10 h-10 flex items-center justify-center text-[10px] font-bold border rounded-full transition-all ${
+                          product.size.includes(size)
+                            ? 'border-gray-900 text-gray-900'
+                            : 'border-gray-100 text-gray-200'
+                        }`}
+                      >
+                        {size}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Description */}
+              <div className="space-y-4 pt-12 border-t border-gray-100">
+                <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-gray-900">
+                  <Info size={14} />
+                  <span>The Story & Craft</span>
+                </div>
+                <p className="text-gray-500 font-light leading-relaxed text-sm">
+                  {product.description}
+                </p>
+              </div>
+
+              {/* Minimal Share */}
+              <div className="pt-8">
+                <button className="flex items-center gap-3 text-[10px] font-bold uppercase tracking-widest text-gray-400 hover:text-pink-600 transition-colors">
+                  <Share2 size={16} />
+                  Share Masterpiece
+                </button>
+              </div>
             </div>
-            <div className="flex items-center gap-3 text-sm font-medium text-gray-600">
-              <ShieldCheck size={20} className="text-pink-600" />
-              <span>Secure Payment</span>
-            </div>
-            <div className="flex items-center gap-3 text-sm font-medium text-gray-600">
-              <Share2 size={20} className="text-pink-600" />
-              <span>Easy Share</span>
-            </div>
-          </div>
-          
-          <div className="mt-10">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">Product Description</h3>
-            <p className="text-gray-600 leading-relaxed">{product.description}</p>
           </div>
         </div>
+
+        {/* Related Collections */}
+        {relatedProducts.length > 0 && (
+          <div className="mt-40 pt-24 border-t border-gray-100">
+            <div className="flex items-center justify-between mb-16">
+              <h2 className="text-3xl md:text-4xl font-serif text-gray-900 italic">Similar Pieces</h2>
+              <a href={`/${product.category}`} className="text-xs font-bold uppercase tracking-widest text-pink-600 border-b border-pink-600 pb-1">View Full Collection</a>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12">
+              {relatedProducts.map((p: any) => (
+                <ProductCard key={p._id} product={p} />
+              ))}
+            </div>
+          </div>
+        )}
       </div>
-
-      {/* Related Products */}
-      {relatedProducts.length > 0 && (
-        <div className="mt-20">
-          <h2 className="text-2xl font-bold text-gray-900 mb-8">You May Also Like</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {relatedProducts.map((p: any) => (
-              <ProductCard key={p._id} product={p} />
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
